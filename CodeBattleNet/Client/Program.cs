@@ -13,8 +13,18 @@ namespace Client
         static Direction prevDirection = Direction.Right;
         static int restEvelRound = 0;
 
+        static BoardElement[] enemyHeads => new[] {
+            BoardElement.EnemyHeadDown,
+            BoardElement.EnemyHeadLeft,
+            BoardElement.EnemyHeadRight,
+            BoardElement.EnemyHeadUp,
+            BoardElement.EnemyHeadEvil,
+            BoardElement.EnemyHeadFly,
+            BoardElement.EnemyHeadSleep,
+        };
+
         static KeyValuePair<BoardElement, Func<bool>>[] elementsByFunc = new KeyValuePair<BoardElement, Func<bool>>[] {
-            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound > 1 ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound >= 1 ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadRight, () => true ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadUp, () => true ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadDown, () => true ),
@@ -22,18 +32,21 @@ namespace Client
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadEvil, () => false ),
         };
 
-        static BoardElement[] strongBadElements = new[] { 
+        static BoardElement[] strongBadElements => new[] { 
             BoardElement.Wall,
             BoardElement.StartFloor,
-            BoardElement.Stone,
             BoardElement.EnemyHeadSleep,
             BoardElement.EnemyTailInactive,
             BoardElement.TailInactive,
-        };
+        }
+        .Union(
+                elementsByFunc
+                .Where(pair => !pair.Value())
+                .Select(pair => pair.Key))
+            .ToArray();
 
-        static BoardElement[] badElements = strongBadElements.Union(
+        static BoardElement[] badElements => strongBadElements.Union(
             new[] {
-                //BoardElement.Stone,
                 BoardElement.HeadEvil,
                 BoardElement.HeadRight,
                 BoardElement.HeadUp,
@@ -57,7 +70,7 @@ namespace Client
                 .Select(pair => pair.Key))
             .ToArray();
 
-        static BoardElement[] goodElements = new[] {
+        static BoardElement[] goodElements => new[] {
             BoardElement.Apple,
             BoardElement.FlyingPill,
             BoardElement.Gold,
@@ -150,6 +163,20 @@ namespace Client
             return GetDefaultDirection(gameBoard, head);
         }
 
+        private static bool IsEnemyInTheTail(GameBoard gameBoard)
+        {
+            var myTailPoint = gameBoard.GetMyTail();
+            if (myTailPoint == null)
+            {
+                return false;
+            }
+
+            return gameBoard.HasElementAt(myTailPoint.Value.ShiftRight(), enemyHeads) ||
+                gameBoard.HasElementAt(myTailPoint.Value.ShiftTop(), enemyHeads) ||
+                gameBoard.HasElementAt(myTailPoint.Value.ShiftBottom(), enemyHeads) ||
+                gameBoard.HasElementAt(myTailPoint.Value.ShiftLeft(), enemyHeads);
+        }
+
         static void Main(string[] args)
         {
             var client = new SnakeBattleClient(SERVER_ADDRESS);
@@ -161,22 +188,26 @@ namespace Client
 
         private static SnakeAction DoRun(GameBoard gameBoard)
         {
-            //if (gameBoard.AmIEvil() && restEvelRound == 0)
-            //{
-            //    restEvelRound = MaxEvelRounds;
-            //}
+            if (!gameBoard.AmIEvil())
+            {
+                restEvelRound = 0;
+            }
+            else if (restEvelRound == 0)
+            {
+                restEvelRound = MaxEvelRounds;
+            }
 
-            //if (restEvelRound > 0)
-            //{
-            //    restEvelRound--;
-            //}
+            if (restEvelRound > 0)
+            {
+                restEvelRound--;
+            }
 
 
             var head = gameBoard.GetMyHead();
             if (head == null)
             {
                 prevDirection = Direction.Right;
-                return new SnakeAction(false, prevDirection);
+                return new SnakeAction(IsEnemyInTheTail(gameBoard), prevDirection);
             }
 
             var huntingElements = gameBoard.FindAllElements(goodElements);
@@ -186,11 +217,11 @@ namespace Client
             if (hunting == null)
             {
                 prevDirection = GetDefaultDirection(gameBoard, head.Value);
-                return new SnakeAction(false, prevDirection);
+                return new SnakeAction(IsEnemyInTheTail(gameBoard), prevDirection);
             }
 
             prevDirection = GetDirectionToTarget(gameBoard, head.Value, hunting);
-            return new SnakeAction(false, prevDirection);
+            return new SnakeAction(IsEnemyInTheTail(gameBoard), prevDirection);
         }        
     }
 }

@@ -195,5 +195,10 @@ namespace SnakeBattle.Api
         {
             return FindFirstElement(HeadDead, HeadDown, HeadUp, HeadLeft, HeadRight, HeadEvil, HeadFly, HeadSleep);
         }
+
+        public BoardPoint? GetMyTail()
+        {
+            return FindFirstElement(TailEndDown, TailEndLeft, TailEndUp, TailEndRight, TailInactive);
+        }
     }
 }
