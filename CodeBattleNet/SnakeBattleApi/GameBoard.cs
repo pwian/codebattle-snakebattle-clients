@@ -105,6 +105,16 @@ namespace SnakeBattle.Api
             return (BoardElement)BoardString[GetShiftByPoint(point)];
         }
 
+        public BoardElement GetElementAtOrWall(BoardPoint point)
+        {
+            if (point.IsOutOfBoard(Size))
+            {
+                return BoardElement.Wall;
+            }
+
+            return (BoardElement)BoardString[GetShiftByPoint(point)];
+        }
+
         public void PrintBoard()
         {
             for (int i = 0; i < Size; i++)

@@ -14,13 +14,22 @@ namespace Client
         static int restEvelRound = 0;
 
         static KeyValuePair<BoardElement, Func<bool>>[] elementsByFunc = new KeyValuePair<BoardElement, Func<bool>>[] {
-            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound > 1 )
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound > 1 ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadRight, () => true ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadUp, () => true ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadDown, () => true ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadLeft, () => true ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadEvil, () => false ),
         };
 
         static BoardElement[] strongBadElements = new[] { 
             BoardElement.Wall,
             BoardElement.StartFloor,
-            BoardElement.Stone};
+            BoardElement.Stone,
+            BoardElement.EnemyHeadSleep,
+            BoardElement.EnemyTailInactive,
+            BoardElement.TailInactive,
+        };
 
         static BoardElement[] badElements = strongBadElements.Union(
             new[] {
@@ -71,15 +80,15 @@ namespace Client
         .ToArray();
 
         static bool canRight(GameBoard gameBoard, BoardPoint head) => prevDirection != Direction.Left &&
-                !badElements.Contains(gameBoard.GetElementAt(head.ShiftRight()));
+                !badElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftRight()));
         static bool canUp(GameBoard gameBoard, BoardPoint head) => prevDirection != Direction.Down &&
-                !badElements.Contains(gameBoard.GetElementAt(head.ShiftTop()));
+                !badElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftTop()));
         static bool canDown(GameBoard gameBoard, BoardPoint head) => prevDirection != Direction.Up &&
-                !badElements.Contains(gameBoard.GetElementAt(head.ShiftBottom()));
+                !badElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftBottom()));
         static bool canLeft(GameBoard gameBoard, BoardPoint head) => prevDirection != Direction.Right &&
-                !badElements.Contains(gameBoard.GetElementAt(head.ShiftLeft()));
+                !badElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftLeft()));
 
-        static int incrementIfNotBadPoint(GameBoard gameBoard, BoardPoint point) => strongBadElements.Contains(gameBoard.GetElementAt(point)) ? 0 : 1;
+        static int incrementIfNotBadPoint(GameBoard gameBoard, BoardPoint point) => strongBadElements.Contains(gameBoard.GetElementAtOrWall(point)) ? 0 : 1;
 
         static bool isNotDeadEnd(GameBoard gameBoard, BoardPoint point) => 
             incrementIfNotBadPoint(gameBoard, point.ShiftRight()) +
@@ -96,19 +105,19 @@ namespace Client
             }
 
             if (prevDirection != Direction.Left &&
-                !strongBadElements.Contains(gameBoard.GetElementAt(head.ShiftRight())))
+                !strongBadElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftRight())))
             {
                 return Direction.Right;
             }
 
             if (prevDirection != Direction.Down &&
-                !strongBadElements.Contains(gameBoard.GetElementAt(head.ShiftTop())))
+                !strongBadElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftTop())))
             {
                 return Direction.Up;
             }
 
             if (prevDirection != Direction.Up &&
-                !strongBadElements.Contains(gameBoard.GetElementAt(head.ShiftBottom())))
+                !strongBadElements.Contains(gameBoard.GetElementAtOrWall(head.ShiftBottom())))
             {
                 return Direction.Down;
             }
