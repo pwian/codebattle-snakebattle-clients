@@ -24,7 +24,7 @@ namespace Client
         };
 
         static KeyValuePair<BoardElement, Func<bool>>[] elementsByFunc = new KeyValuePair<BoardElement, Func<bool>>[] {
-            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound >= 1 ),
+            new KeyValuePair<BoardElement, Func<bool>>(BoardElement.Stone, () => restEvelRound > 1 ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadRight, () => true ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadUp, () => true ),
             new KeyValuePair<BoardElement, Func<bool>>(BoardElement.EnemyHeadDown, () => true ),
@@ -38,6 +38,7 @@ namespace Client
             BoardElement.EnemyHeadSleep,
             BoardElement.EnemyTailInactive,
             BoardElement.TailInactive,
+            BoardElement.EnemyHeadDead,
         }
         .Union(
                 elementsByFunc
@@ -104,10 +105,19 @@ namespace Client
         static int incrementIfNotBadPoint(GameBoard gameBoard, BoardPoint point) => strongBadElements.Contains(gameBoard.GetElementAtOrWall(point)) ? 0 : 1;
 
         static bool isNotDeadEnd(GameBoard gameBoard, BoardPoint point) => 
-            incrementIfNotBadPoint(gameBoard, point.ShiftRight()) +
-            incrementIfNotBadPoint(gameBoard, point.ShiftTop()) +
-            incrementIfNotBadPoint(gameBoard, point.ShiftBottom()) +
-            incrementIfNotBadPoint(gameBoard, point.ShiftLeft())
+                incrementIfNotBadPoint(gameBoard, point.ShiftRight()) +
+                incrementIfNotBadPoint(gameBoard, point.ShiftTop()) +
+                incrementIfNotBadPoint(gameBoard, point.ShiftBottom()) +
+                incrementIfNotBadPoint(gameBoard, point.ShiftLeft())
+            > 1;
+
+        static int incrementIfNotDeadEnd(GameBoard gameBoard, BoardPoint point) => incrementIfNotBadPoint(gameBoard, point) == 1 && isNotDeadEnd(gameBoard, point) ? 1 : 0;
+
+        static bool isNotDeadEnd2(GameBoard gameBoard, BoardPoint point) =>
+            incrementIfNotDeadEnd(gameBoard, point.ShiftRight()) +
+            incrementIfNotDeadEnd(gameBoard, point.ShiftTop()) +
+            incrementIfNotDeadEnd(gameBoard, point.ShiftBottom()) +
+            incrementIfNotDeadEnd(gameBoard, point.ShiftLeft())
             > 1;
 
         private static Direction GetDefaultDirection(GameBoard gameBoard, BoardPoint head)
@@ -213,7 +223,7 @@ namespace Client
             var huntingElements = gameBoard.FindAllElements(goodElements);
             var hunting = huntingElements
                 .OrderBy(element => Math.Abs(element.X - head.Value.X) + Math.Abs(element.Y - head.Value.Y))
-                .FirstOrDefault(element => isNotDeadEnd(gameBoard, element));
+                .FirstOrDefault(element => isNotDeadEnd2(gameBoard, element));
             if (hunting == null)
             {
                 prevDirection = GetDefaultDirection(gameBoard, head.Value);
